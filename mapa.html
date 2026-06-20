@@ -3,42 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa de la Reserva Tehuacán-Cuicatlán</title>
+    <title>Mapa Interactivo - Proyecto Biocultural</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f6f8; }
         .contenedor { max-width: 1200px; margin: 0 auto; }
         h1 { color: #1b3d2f; margin-bottom: 5px; }
         p { color: #555; margin-top: 0; margin-bottom: 20px; }
-        #map { height: 650px; width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        #map { height: 680px; width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .popup-contenido h3 { margin: 0 0 5px 0; color: #1b3d2f; font-size: 16px; }
+        .popup-contenido p { margin: 0; color: #444; font-size: 13px; }
     </style>
 </head>
 <body>
+
 <div class="contenedor">
-    <h1>Reserva de la Biosfera Tehuacán-Cuicatlán</h1>
-    <p>Mapa interactivo con delimitación poligonal oficial (Puebla / Oaxaca).</p>
+    <h1>Comunidades del Proyecto Biocultural</h1>
+    <p>Mapa de localidades de estudio y trayectos de exploración en la RB Tehuacán-Cuicatlán.</p>
     <div id="map"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="https://unpkg.com/leaflet-ant-path@1.3.0/dist/leaflet-ant-path.js"></script>
+
 <script>
+    // 1. Capas Base
     const mapaCalles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
     const mapaSatélite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' });
 
-    const map = L.map('map', { center: [18.2, -97.3], zoom: 9, layers: [mapaCalles] });
-    const capasBase = { "Mapa de Calles": mapaCalles, "Vista Satelital": mapaSatélite };
-    L.control.layers(capasBase, null, { collapsed: false }).addTo(map);
+    // 2. Inicializar Mapa
+    const map = L.map('map', { 
+        center: [18.0, -97.1], 
+        zoom: 9, 
+        layers: [mapaCalles] 
+    });
 
-    const estiloReserva = { color: "#d35400", weight: 2.5, opacity: 0.9, fillColor: "#e67e22", fillOpacity: 0.25 };
+    // 3. Marcadores de Localidades Específicas
+    const locChazumba = L.marker([18.1886, -97.6764]).bindPopup(`
+        <div class="popup-contenido"><h3>Santiago Chazumba</h3><p>Región Mixteca Baja, zona de matorral xerófilo y cactáceas.</p></div>
+    `);
+    const locIxcatlan = L.marker([17.8481, -97.1811]).bindPopup(`
+        <div class="popup-contenido"><h3>Santa María Ixcatlán</h3><p>Tierra del pueblo Ixcateco y palma tejedora.</p></div>
+    `);
+    const locTecomavaca = L.marker([18.1403, -97.0256]).bindPopup(`
+        <div class="popup-contenido"><h3>Santa María Tecomavaca</h3><p>Valle semiárido, cañones profundos y poblaciones de guacamayas.</p></div>
+    `);
+    const locTomellin = L.marker([17.7561, -96.9322]).bindPopup(`
+        <div class="popup-contenido"><h3>Tomellín</h3><p><b>Comunidad Base.</b> Punto neurálgico e histórico de la cañada.</p></div>
+    `);
+    const locPapalo = L.marker([17.8047, -96.8856]).bindPopup(`
+        <div class="popup-contenido"><h3>Santos Reyes Pápalo</h3><p>Zona serrana alta, bosques templados y biodiversidad vegetal.</p></div>
+    `);
+    const locApoala = L.marker([17.6492, -97.1350]).bindPopup(`
+        <div class="popup-contenido"><h3>Santiago Apoala</h3><p>Paisajes de cañadas de agua, caídas fluviales y enconares.</p></div>
+    `);
+
+    // Agrupar marcadores en la capa
+    const capaLocalidades = L.layerGroup([locChazumba, locIxcatlan, locTecomavaca, locTomellin, locPapalo, locApoala]).addTo(map);
+
+    // 4. Ruta Animada (Conecta los puntos en un circuito lógico de recorrido)
+    const coordenadasRuta = [
+        [18.1886, -97.6764], // Santiago Chazumba
+        [17.8481, -97.1811], // Santa María Ixcatlán
+        [18.1403, -97.0256], // Santa María Tecomavaca
+        [17.7561, -96.9322], // Tomellín (Base)
+        [17.8047, -96.8856], // Santos Reyes Pápalo
+        [17.6492, -97.1350]  // Santiago Apoala
+    ];
+
+    const rutaAnimada = L.polyline.antPath(coordenadasRuta, {
+        delay: 800,            // Velocidad del flujo de hormigas
+        dashArray: [10, 15],   // Longitud de los guiones
+        weight: 3.5,           // Grosor
+        color: "#2980b9",      // Color base de la línea
+        pulseColor: "#ffffff", // Color de animación
+        paused: false
+    }).addTo(map);
+
+    // 5. Configurar Control de Capas
+    const capasBase = {
+        "Mapa de Calles": mapaCalles,
+        "Vista Satelital": mapaSatélite
+    };
+
+    const capasSuperpuestas = {
+        "Pueblos del Proyecto": capaLocalidades,
+        "Ruta de Exploración": rutaAnimada
+    };
+
+    L.control.layers(capasBase, capasSuperpuestas, { collapsed: false }).addTo(map);
+
+    // 6. Cargar el Polígono de la Reserva (Tu GeoJSON)
+    const estiloReserva = { color: "#d35400", weight: 2.5, opacity: 0.5, fillColor: "#e67e22", fillOpacity: 0.12 };
 
     fetch('tehuacancuicatlan.geojson')
         .then(response => response.json())
         .then(data => {
             const capaReserva = L.geoJSON(data, { style: estiloReserva }).addTo(map);
+            // Enfocar automáticamente el encuadre para que salgan todos los pueblos
             map.fitBounds(capaReserva.getBounds());
-            capaReserva.bindPopup("<b>RB Tehuacán-Cuicatlán</b><br>Área Natural Protegida.");
         })
         .catch(error => console.error("Error cargando el GeoJSON:", error));
 </script>
+
 </body>
 </html>
